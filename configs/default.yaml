@@ -1,0 +1,218 @@
+# LeFo: Leader-Follower Signal Prediction Configuration
+# IEEE MLSP 2025: Istanbul, Turkey
+# Author: Mohammad Ali Vahedifar (av@ece.au.dk)
+
+# =============================================================================
+# Model Configuration
+# =============================================================================
+model:
+  # Human (Leader) Network
+  human_layers: 12              # Number of fully connected layers
+  human_hidden_dim: 100         # Hidden dimension per layer
+  
+  # Robot (Follower) Network
+  robot_layers: 8               # Number of fully connected layers
+  robot_hidden_dim: 100         # Hidden dimension per layer
+  
+  # Common settings
+  input_dim: 9                  # 3D position + 3D velocity + 3D force
+  output_dim: 9                 # Same as input (predict next state)
+  dropout: 0.5                  # Dropout probability
+  activation: "relu"            # Activation function
+  batch_norm: true              # Use batch normalization
+  init_method: "he"             # Weight initialization (he, xavier, normal)
+
+# =============================================================================
+# Training Configuration
+# =============================================================================
+training:
+  epochs: 100                   # Number of training epochs
+  batch_size: 32                # Training batch size
+  
+  # Optimizer (SGD with momentum as per paper)
+  optimizer: "sgd"
+  learning_rate: 0.01           # Initial learning rate
+  momentum: 0.9                 # SGD momentum
+  weight_decay: 0.0             # L2 regularization
+  
+  # Learning rate schedule
+  lr_scheduler: "multistep"     # Options: multistep, cosine, exponential
+  lr_decay_epochs: [50, 75]     # Epochs to decay LR
+  lr_decay_factor: 0.1          # LR decay factor
+  
+  # Gradient clipping
+  gradient_clip: 1.0            # Max gradient norm (0 to disable)
+  
+  # Early stopping
+  early_stopping: true
+  early_stopping_patience: 10   # Epochs without improvement
+  early_stopping_monitor: "val_loss"
+  
+  # Checkpointing
+  save_best_only: true
+  checkpoint_frequency: 10      # Save every N epochs
+
+# =============================================================================
+# Game Theory Configuration
+# =============================================================================
+game:
+  # MiniMax optimization
+  minimax_enabled: true
+  alternating_steps: 1          # Steps per player per iteration
+  
+  # Mutual Information estimation (KNN method)
+  mi_k_neighbors: 11            # K for KNN MI estimator
+  mi_norm: "chebyshev"          # Distance norm (chebyshev, euclidean)
+  
+  # KL Divergence
+  kl_mode: "softmax"            # Options: softmax, gaussian
+  kl_temperature: 1.0           # Softmax temperature
+  
+  # Upper bound verification
+  verify_upper_bound: true
+  power_iteration_steps: 20     # Steps for lambda_max estimation
+
+# =============================================================================
+# Data Configuration
+# =============================================================================
+data:
+  # Dataset paths
+  data_dir: "./data"
+  dataset_type: "drag"          # Default dataset
+  
+  # Preprocessing
+  sequence_length: 10           # Input sequence length
+  normalize: true               # Apply normalization
+  normalization_mode: "standard"  # Options: standard, minmax
+  
+  # Perceptual deadband filtering
+  apply_deadband: true
+  velocity_threshold: 0.1       # 10% threshold
+  force_threshold: 0.1          # 10% threshold
+  
+  # Data splits
+  train_ratio: 0.7
+  val_ratio: 0.15
+  test_ratio: 0.15
+  
+  # DataLoader settings
+  num_workers: 4
+  pin_memory: true
+  shuffle_train: true
+
+# =============================================================================
+# Hardware Configuration
+# =============================================================================
+hardware:
+  device: "auto"                # Options: auto, cpu, cuda, cuda:0, etc.
+  seed: 42                      # Random seed for reproducibility
+  deterministic: true           # Use deterministic algorithms
+  benchmark: false              # Enable cuDNN benchmark mode
+
+# =============================================================================
+# Logging Configuration
+# =============================================================================
+logging:
+  level: "INFO"                 # Options: DEBUG, INFO, WARNING, ERROR
+  
+  # Console logging
+  console_enabled: true
+  progress_bar: true
+  
+  # File logging
+  file_enabled: true
+  log_dir: "./logs"
+  
+  # TensorBoard
+  tensorboard_enabled: false
+  tensorboard_dir: "./runs"
+  
+  # Weights & Biases
+  wandb_enabled: false
+  wandb_project: "lefo-tactile-internet"
+  wandb_entity: null            # Your W&B username/team
+
+# =============================================================================
+# Output Configuration
+# =============================================================================
+output:
+  output_dir: "./outputs"
+  experiment_name: null         # Auto-generated if null
+  save_predictions: false       # Save raw predictions
+  save_figures: true            # Generate and save figures
+  figure_format: "pdf"          # Options: pdf, png, svg
+
+# =============================================================================
+# Dataset-Specific Configurations
+# =============================================================================
+# These override defaults for specific dataset types
+
+datasets:
+  drag:
+    description: "Drag Max Stiffness Y"
+    expected_samples: 10000
+    
+  horizontal_fast:
+    description: "Horizontal Movement Fast"
+    expected_samples: 8000
+    
+  horizontal_slow:
+    description: "Horizontal Movement Slow"
+    expected_samples: 12000
+    
+  tap_hold_fast:
+    description: "Tap and Hold Z Fast"
+    expected_samples: 9000
+    
+  tap_hold_slow:
+    description: "Tap and Hold Z Slow"
+    expected_samples: 11000
+    
+  tapping_yz:
+    description: "Tapping Max Y-Z"
+    expected_samples: 10000
+    
+  tapping_z:
+    description: "Tapping Max Z"
+    expected_samples: 10000
+
+# =============================================================================
+# Paper Results (Reference)
+# =============================================================================
+# Expected results from IEEE MLSP 2025 paper for validation
+
+reference_results:
+  drag:
+    human_accuracy: 95.03
+    robot_accuracy: 89.77
+    inference_time_ms: 8.5
+    
+  horizontal_fast:
+    human_accuracy: 92.15
+    robot_accuracy: 85.42
+    inference_time_ms: 6.5
+    
+  horizontal_slow:
+    human_accuracy: 93.28
+    robot_accuracy: 87.61
+    inference_time_ms: 7.2
+    
+  tap_hold_fast:
+    human_accuracy: 88.45
+    robot_accuracy: 78.33
+    inference_time_ms: 9.1
+    
+  tap_hold_slow:
+    human_accuracy: 90.12
+    robot_accuracy: 82.18
+    inference_time_ms: 8.7
+    
+  tapping_yz:
+    human_accuracy: 85.67
+    robot_accuracy: 75.89
+    inference_time_ms: 11.2
+    
+  tapping_z:
+    human_accuracy: 80.62
+    robot_accuracy: 70.44
+    inference_time_ms: 10.1
